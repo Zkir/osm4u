@@ -1,0 +1,110 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en"> 
+ 
+<head> 
+<title>Электронный справочник "ОСМ для Вас!</title> 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+ 
+<style type="text/css" media="screen"> 
+/*<![CDATA[*/
+html, body {
+height: 100%;
+}
+
+
+#wrapper {
+	background: #f1f2ea url(background.gif) repeat-y right;
+	min-height: 85%;
+}
+#header {
+	background: #d7dabd;
+	height:20px;
+}
+#container {
+	width: 100%;
+	height:100%;
+	background: #f1f2ea url(background.gif) repeat-y right;
+	float: left;
+	margin-right: -200px;
+}
+#content {
+ 	height:100%;
+	background: #f1f2ea;
+	margin-right: 200px;
+}
+#sidebar {
+	width: 200px;
+	height:100%;
+	float: right;
+}
+#footer {
+    height:20px;
+	background: #d7dabd;
+}
+h1 {
+	margin-top: 0;
+}
+.last {
+	margin-bottom: 0;
+}
+.clearing {
+	height: 0;
+	clear: both;
+}
+/*]]>*/
+</style> 
+
+
+</head> 
+ 
+<body  onload="resize()" onresize="resize()">
+<script type='text/javascript'>
+function resize(){  
+  var frame = document.getElementById("wrapper");  
+  var htmlheight = document.body.parentNode.scrollHeight;  
+  var windowheight = window.innerHeight;
+  var delta=40; 
+  var CenterPoint=map.getCenter(); 
+  if ( htmlheight < windowheight ) {
+    windowheight-= 18;
+    document.body.style.height = windowheight-delta + "px";
+    frame.style.height = windowheight-delta-5 + "px";
+  } else {
+    htmlheight-= 18;
+    document.body.style.height = htmlheight-delta + "px";
+    frame.style.height = htmlheight-delta-5 + "px";
+  }
+    
+  map.checkResize();
+  map.setCenter(CenterPoint); 
+} 
+</script> 
+<div id="header">Выберите категорию объектов</div> 
+ 
+<div id="wrapper"> 
+	<div id="container"> 
+		<div id="content"> 
+			 <div id="WebMap" style="width:100%;height:99%;border:solid;"></div>
+		</div> 
+	</div> 
+	
+	<div id="sidebar"> 
+	    <div id="categories" style="margin:20px"> abc</div> 
+		<!--
+		<h1>sidebar</h1> 
+		<ul> 
+			<li>link one</li> 
+			<li>link two</li> 
+		</ul> -->
+	</div> 
+	<div class="clearing">&nbsp;</div> 
+</div> 
+ 
+<div id="footer"><center>(c) osm4u, CC-BY-SA 2.0</center></div> 
+
+    <script type="text/javascript" src="http://tile.cloudmade.com/wml/latest/web-maps-lite.js"></script> 
+    <script type="text/javascript" src="mymap.js"> </script> 
+</body> 
+</html>
