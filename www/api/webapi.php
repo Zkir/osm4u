@@ -4,32 +4,51 @@
   Osm4u, (c) Zkir 2012
 ==============================================================================*/
 //Коды сообщений об ошибках в секции ERS
-//
+//  
 define("ERR_INFOMESSAGE",0);
 define("ERR_WARNING",1);
 define("ERR_BUSINESS_ERROR",2);
 define("ERR_INTERNAL_ERROR",3);
 
+//КОДЫ ОШИБОК
+define("EC_OPERATION_COMPLETED",0);
+define("EC_UNKNOWN_OPERATION",1);
+
 require_once("settings.php");
 header('Content-Type: text/xml; charset="windows-1251"');
 
 
-//Получим хмл. Если надо, раскодируем из base 64
+//Получим хмл. Если надо, раскодируем из base 64   
 $xmlmsg=$_POST[xmlmsg];
 if ($_POST[base64]!='')
 { $xmlmsg=base64_decode($xmlmsg);}
 
-$xml=simplexml_load_string($xmlmsg);
+$RequestXml=simplexml_load_string($xmlmsg);
 
 
 //echo  XML_node('REQUEST', iconv('WINDOWS-1251', 'UTF-8', $xmlmsg));
-$operation=$xml->attributes()->operation;
+$operation=$RequestXml->attributes()->operation;
 
-if ($operation=='UserIn')
-  $ResponseXml=UserIn($xml);
 
-if ($operation=='UserCheck')
-  $ResponseXml=UserCheck($xml);
+$ResponseXml = new SimpleXMLElement('<?xml version="1.0" encoding="utf-8"?><RESPONSE><ERS></ERS><DTA></DTA></RESPONSE>');
+
+
+switch ($operation)
+{
+	case "UserIn":
+		$ResponseXml=UserIn($RequestXml);
+		break;
+	case "UserCheck":
+		$ResponseXml=UserCheck($RequestXml);
+		break;
+	case "PoiOut":
+	    PoiOut($RequestXml,$ResponseXml);
+		break;
+	default:
+	    AddError($ResponseXml,ERR_BUSINESS_ERROR, EC_UNKNOWN_OPERATION, 'Неизвестная операция');
+	    break;
+}	
+	
 
 echo $ResponseXml->asXML();
 
@@ -175,4 +194,56 @@ function UserCheck($RequestXml)
    AddError($ResponseXml, ERR_INFOMESSAGE, 0, 'Операция завершилась успешно' );
    return $ResponseXml;
 }
+
+//Выдача ПОИ
+function PoiOut($RequestXml,$ResponseXml)
+{
+  global $g_DB_Server, $g_DB_User,$g_DB_Password;
+  
+ 
+  /* Подключение к серверу БД: */
+  $connect=mssql_connect($g_DB_Server, $g_DB_User,$g_DB_Password)or exit("Не удалось соединиться с сервером");
+
+  /* Выбор БД: */
+  $db=mssql_select_db("[1gb_osm4u]", $connect) or exit("Не удалось выбрать БД");
+ // $strsql="SELECT * FROM POI WHERE MP_TYPE='0xF102'";    // строка с SQL-запросом
+  $strsql="SELECT TOP 200 * FROM POI WHERE LAT>".$RequestXml->DTA->MINLAT." AND LAT<".$RequestXml->DTA->MAXLAT." AND LON>".$RequestXml->DTA->MINLON." AND LON<".$RequestXml->DTA->MAXLON." ";
+  //echo $strsql;
+  
+  
+  
+  $result=mssql_query($strsql, $connect);     // выполнение SQL-запроса
+
+    
+  //Цикл по возвращенным записям
+  while (($row = mssql_fetch_array($result))) 
+    { 
+    	
+       $poinode=$ResponseXml->DTA->addChild('POI');
+       
+       $poinode->addChild('NAME', $row['NAME']);
+       $poinode->addChild('OSM_ID',$row['OSM_ID'] );
+       $poinode->addChild('MP_TYPE',$row['MP_TYPE'] );
+       $coordnode=$poinode->addChild('COORD');
+       $coordnode->addChild('LAT',$row['LAT'] );
+       $coordnode->addChild('LON', $row['LON'] );
+       $poinode->addChild('DESCRIPTION1', $row['DESCRIPTION1']);
+       $poinode->addChild('DESCRIPTION2', $row['DESCRIPTION2']);
+       $poinode->addChild('ADDRESS1', $row['ADDRESS1']);
+       $poinode->addChild('ADDRESS2', $row['ADDRESS2']);
+       $poinode->addChild('ADDRESS3', $row['ADDRESS3']);
+       $poinode->addChild('PHONE', $row['PHONE']);
+       $poinode->addChild('WEBSITE', $row['WEBSITE']);
+       $poinode->addChild('OPENING_HOURS',$row['OPENING_HOURS'] );
+      
+    } 
+    
+  
+  mssql_free_result($result);	
+  mssql_close($connect); // отключение от БД
+  
+  
+  AddError($ResponseXml, ERR_INFOMESSAGE, EC_OPERATION_COMPLETED, 'Операция завершилась успешно' );
+  return;
+}  
 ?>
