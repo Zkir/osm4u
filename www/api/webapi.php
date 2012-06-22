@@ -5,14 +5,14 @@
 ==============================================================================*/
 //Коды сообщений об ошибках в секции ERS
 //  
-define("ERR_INFOMESSAGE",0);
-define("ERR_WARNING",1);
-define("ERR_BUSINESS_ERROR",2);
-define("ERR_INTERNAL_ERROR",3);
+define("ERRL_INFOMESSAGE",0);
+define("ERRL_WARNING",1);
+define("ERRL_BUSINESS_ERROR",2);
+define("ERRL_INTERNAL_ERROR",3);
 
 //КОДЫ ОШИБОК
-define("EC_OPERATION_COMPLETED",0);
-define("EC_UNKNOWN_OPERATION",1);
+define("ERR_OPERATION_COMPLETED",0);
+define("ERR_UNKNOWN_OPERATION",1);
 
 require_once("settings.php");
 header('Content-Type: text/xml; charset="windows-1251"');
@@ -36,21 +36,30 @@ $ResponseXml = new SimpleXMLElement('<?xml version="1.0" encoding="utf-8"?><RESP
 switch ($operation)
 {
 	case "UserIn":
-		$ResponseXml=UserIn($RequestXml);
+		UserIn($RequestXml,$ResponseXml);
 		break;
 	case "UserCheck":
-		$ResponseXml=UserCheck($RequestXml);
+		UserCheck($RequestXml,$ResponseXml);
 		break;
 	case "PoiOut":
 	    PoiOut($RequestXml,$ResponseXml);
 		break;
+		
+	case "CategoryOut":
+	    CategoryOut($RequestXml,$ResponseXml);
+		break;	
+		
 	default:
-	    AddError($ResponseXml,ERR_BUSINESS_ERROR, EC_UNKNOWN_OPERATION, 'Неизвестная операция');
+	    AddError($ResponseXml,ERRL_BUSINESS_ERROR, ERR_UNKNOWN_OPERATION, 'Неизвестная операция');
 	    break;
 }	
 	
 
 echo $ResponseXml->asXML();
+
+//============================================================================================================
+// Разные полезные функции
+//============================================================================================================
 
 //Экранирование спецсимволов xml
 function XML_node($key,$value)
@@ -73,7 +82,6 @@ return (!eregi("^([a-zA-Z0-9~\._-]{2,})(@{1}[a-zA-Z0-9~\._-]{2,})(\.{1}[a-zA-Z]{
 }
 
 //Добавление ошибок в список ошибок
-
 function AddError($ResponseXml,$errtype,$errcode,$errdesc)
 {
 
@@ -83,11 +91,12 @@ function AddError($ResponseXml,$errtype,$errcode,$errdesc)
   $errmsg->addChild('DESCR', $errdesc);
 }
 
-//Собственно User In
-function UserIn($RequestXml)
+//===================================================================================================
+//Вввод, ака регистрация пользователей (User In)
+//===================================================================================================
+function UserIn($RequestXml, $ResponseXml)
 {
   global $g_DB_Server, $g_DB_User,$g_DB_Password;
-  $ResponseXml = new SimpleXMLElement('<?xml version="1.0" encoding="utf-8"?><RESPONSE><ERS></ERS><DTA></DTA></RESPONSE>');
   //Наша задача - проверить входные данные
   //Если все хорошо - сохранить данные в базу.
 
@@ -108,23 +117,23 @@ function UserIn($RequestXml)
       //Проверим что значения заданы
 
         if ($User->EMAIL=='')
-          {AddError($ResponseXml,ERR_BUSINESS_ERROR ,2,'Логин не задан');
+          {AddError($ResponseXml,ERRL_BUSINESS_ERROR ,2,'Логин не задан');
            return $ResponseXml;
            };
 
         if (ValidEmail($User->EMAIL)!=True)
-          {AddError($ResponseXml,ERR_BUSINESS_ERROR ,2,'Неправильный формат адреса электронной почты');
+          {AddError($ResponseXml,ERRL_BUSINESS_ERROR ,2,'Неправильный формат адреса электронной почты');
            return $ResponseXml;
         };
 
         if ($User->PASSWORD=='')
-          {AddError($ResponseXml,ERR_BUSINESS_ERROR ,2,'Пароль не задан'); return $ResponseXml;};
+          {AddError($ResponseXml,ERRL_BUSINESS_ERROR ,2,'Пароль не задан'); return $ResponseXml;};
         if ($User->FIRSTNAME=='')
-          {AddError($ResponseXml,ERR_BUSINESS_ERROR ,2,'Имя не задано'); return $ResponseXml;};
+          {AddError($ResponseXml,ERRL_BUSINESS_ERROR ,2,'Имя не задано'); return $ResponseXml;};
         if ($User->LASTNAME=='')
-          {AddError($ResponseXml,ERR_BUSINESS_ERROR ,2,'Фамилия не задана'); return $ResponseXml;};
+          {AddError($ResponseXml,ERRL_BUSINESS_ERROR ,2,'Фамилия не задана'); return $ResponseXml;};
         if ($User->GENDER=='')
-          {AddError($ResponseXml,ERR_BUSINESS_ERROR ,2,'Пол не задан'); return $ResponseXml;};
+          {AddError($ResponseXml,ERRL_BUSINESS_ERROR ,2,'Пол не задан'); return $ResponseXml;};
 
         /* Подключение к серверу БД: */
         $connect=mssql_connect($g_DB_Server, $g_DB_User,$g_DB_Password) or exit("Не удалось соединиться с сервером");
@@ -139,7 +148,7 @@ function UserIn($RequestXml)
          $row = mssql_fetch_array($result);
          
          if ($row[0]>0)
-         	 {AddError($ResponseXml,ERR_BUSINESS_ERROR ,3,'Такой пользователь уже существует'); return $ResponseXml;};
+         	 {AddError($ResponseXml,ERRL_BUSINESS_ERROR ,3,'Такой пользователь уже существует'); return $ResponseXml;};
          
          
         //Вставка нового пользователя
@@ -156,19 +165,21 @@ function UserIn($RequestXml)
     {
     //Редактирование старого пользователя
 
-      AddError($ResponseXml,ERR_INTERNAL_ERROR,1,'Операция редактирования пользователя не поддерживается');
+      AddError($ResponseXml,ERRL_INTERNAL_ERROR,1,'Операция редактирования пользователя не поддерживается');
       return $ResponseXml;
     }
   }
 
-  AddError($ResponseXml, ERR_INFOMESSAGE, 0, 'Операция завершилась успешно' );
+  AddError($ResponseXml, ERRL_INFOMESSAGE, ERR_OPERATION_COMPLETED, 'Операция завершилась успешно' );
   return $ResponseXml;
 }
+
+//===================================================================================================
 //Проверка пользоваетеля
-function UserCheck($RequestXml)
+//===================================================================================================
+function UserCheck($RequestXml,$ResponseXml)
 {
   global $g_DB_Server, $g_DB_User,$g_DB_Password;
-  $ResponseXml = new SimpleXMLElement('<?xml version="1.0" encoding="utf-8"?><RESPONSE><ERS></ERS><DTA></DTA></RESPONSE>');
 
   /* Подключение к серверу БД: */
   $connect=mssql_connect($g_DB_Server, $g_DB_User,$g_DB_Password) or exit("Не удалось соединиться с сервером");
@@ -187,15 +198,16 @@ function UserCheck($RequestXml)
          
    if ($row[0]==0)
      {
-      AddError($ResponseXml,ERR_BUSINESS_ERROR ,4,'Неправильные логин/пароль'); 
+      AddError($ResponseXml,ERRL_BUSINESS_ERROR ,4,'Неправильные логин/пароль'); 
       return $ResponseXml;
      };
          
-   AddError($ResponseXml, ERR_INFOMESSAGE, 0, 'Операция завершилась успешно' );
+   AddError($ResponseXml, ERRL_INFOMESSAGE, 0, 'Операция завершилась успешно' );
    return $ResponseXml;
 }
-
-//Выдача ПОИ
+//===================================================================================================
+//Выдача ПОИ  (PoiOut)
+//===================================================================================================
 function PoiOut($RequestXml,$ResponseXml)
 {
   global $g_DB_Server, $g_DB_User,$g_DB_Password;
@@ -243,7 +255,59 @@ function PoiOut($RequestXml,$ResponseXml)
   mssql_close($connect); // отключение от БД
   
   
-  AddError($ResponseXml, ERR_INFOMESSAGE, EC_OPERATION_COMPLETED, 'Операция завершилась успешно' );
+  AddError($ResponseXml, ERRL_INFOMESSAGE, ERR_OPERATION_COMPLETED, 'Операция завершилась успешно' );
   return;
-}  
+}
+//===================================================================================================
+//Выдача Классификатора (CategoryOut)
+//===================================================================================================
+function CategoryOut($RequestXml,$ResponseXml)
+{
+  global $g_DB_Server, $g_DB_User,$g_DB_Password;
+  
+    /* Подключение к серверу БД: */
+  $connect=mssql_connect($g_DB_Server, $g_DB_User,$g_DB_Password)or exit("Не удалось соединиться с сервером");
+
+  /* Выбор БД: */
+  $db=mssql_select_db("[1gb_osm4u]", $connect) or exit("Не удалось выбрать БД");
+  
+  $strsql='select CATEGORY, POI_TYPE.NAME,NAME_PL,POI_TYPE.MP_TYPE from POI_CATEGORIES
+           inner join POI_TYPE on POI_TYPE.MP_TYPE=POI_CATEGORIES.MP_TYPE 
+           order by CATEGORY,NAME_PL ';    // строка с SQL-запросом
+      
+  $result=mssql_query($strsql, $connect);     // выполнение SQL-запроса
+
+    
+  $cat_name="";
+  while (($row = mssql_fetch_array($result))) 
+    { 
+      if ($cat_name!= $row['CATEGORY'])
+      {
+      	
+        $cat_name= $row['CATEGORY'];
+        
+        $catnode=$ResponseXml->DTA->addChild('CATEGORY');
+        
+        $catnode->addChild('NAME', $cat_name);
+      }
+      
+      $poitypenode=$catnode->addChild('POITYPE');
+      
+      $poitypenode->addChild('NAME',$row['NAME']);
+      $poitypenode->addChild('NAME_PL',$row['NAME_PL']);
+      $poitypenode->addChild('MP_TYPE',$row['MP_TYPE']);
+      
+      
+    } 
+    
+
+  
+  
+  mssql_free_result($result);	
+  mssql_close($connect); // отключение от БД
+
+
+  AddError($ResponseXml, ERRL_INFOMESSAGE, ERR_OPERATION_COMPLETED, 'Операция завершилась успешно' );
+  return;
+}   
 ?>
