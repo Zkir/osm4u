@@ -460,7 +460,7 @@ function AddPoiLayer(POIs)
     Lon0=Lon0/intLen;
     //document.write("<p>"+ " " +  Lat0+ " " + Lon0+"</p>");
 
-    map.setCenter(new CM.LatLng(Lat0,Lon0), 8);
+//    map.setCenter(new CM.LatLng(Lat0,Lon0), 8);
 
 
     //clusterer = new CM.MarkerClusterer(map, {clusterRadius: 40,maxZoomLevel:10});
