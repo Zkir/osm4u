@@ -1,0 +1,29 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>1899.12.30 00:00:00.000.256,=D:\OSM\_osm4u\winpt\uPoiEditor.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.877,D:\OSM\_osm4u\winpt\uLogin.dfm=D:\OSM\_osm4u\winpt\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.666,D:\Documents\RAD Studio\Projects\uMain.dfm=D:\Documents\RAD Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.024,=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.347,=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.039,=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.166,D:\OSM\_osm4u\winpt\uNewUser.dfm=D:\OSM\_osm4u\winpt\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.776,D:\OSM\_osm4u\winpt\uMain.pas=D:\Documents\RAD Studio\Projects\uMain.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.521,=D:\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.666,D:\Documents\RAD Studio\Projects\uMain.pas=D:\Documents\RAD Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.499,D:\OSM\_osm4u\winpt\uXMLposter.pas=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.363,D:\OSM\_osm4u\winpt\uPoi.dfm=D:\OSM\_osm4u\winpt\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.571,D:\OSM\_osm4u\winpt\uWebApi.dfm=D:\OSM\_osm4u\winpt\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.877,D:\OSM\_osm4u\winpt\uLogin.pas=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.571,D:\OSM\_osm4u\winpt\uWebApi.pas=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.776,D:\OSM\_osm4u\winpt\uMain.dfm=D:\Documents\RAD Studio\Projects\uMain.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.166,D:\OSM\_osm4u\winpt\uNewUser.pas=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.499,D:\OSM\_osm4u\winpt\uXMLposter.dfm=D:\OSM\_osm4u\winpt\Unit1.dfm</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.363,D:\OSM\_osm4u\winpt\uPoi.pas=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.717,=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.597,=D:\OSM\_osm4u\winpt\Unit1.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.746,D:\OSM\_osm4u\winpt\osm4u_wpt.dproj=D:\Documents\RAD Studio\Projects\Project1.dproj</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.132,=D:\OSM\_osm4u\winpt\PassWord.pas</Transaction>
+    <Transaction>1899.12.30 00:00:00.000.212,D:\OSM\_osm4u\winpt\uPoi.pas=</Transaction>
+  </Transactions>
+</BorlandProject>
