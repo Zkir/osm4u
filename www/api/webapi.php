@@ -255,10 +255,12 @@ function UserIn($RequestXml, $ResponseXml)
          
          
         //Вставка нового пользователя
-        $strsql="INSERT INTO [USER] ([ID],[DATE_OF_REGISTRATION],[EMAIL],[PASSWORD],".
+        $strsql="INSERT INTO [USER] ([ID],[DATE_OF_REGISTRATION],[MODIFIED_DATE],[EMAIL],[PASSWORD],".
                 "[FIRST_NAME],[LAST_NAME] ,[DATE_OF_BIRTH],".
                 "[GENDER] ,[RANK]  ,[POINTS] ,[STATUS]) ".
-                "VALUES (NEWID(), CURRENT_TIMESTAMP,'".$User->EMAIL."','".$User->PASSWORD."','".$User->FIRSTNAME."','".$User->LASTNAME."','".$User->DATEOFBIRTH."','M',0,0,'' )";
+                "VALUES (NEWID(), CURRENT_TIMESTAMP, CURRENT_TIMESTAMP".
+                 ",'".sql_str($User->EMAIL)."','".sql_str($User->PASSWORD).
+                 "','".sql_str($User->FIRSTNAME)."','".sql_str($User->LASTNAME)."','".sql_str($User->DATEOFBIRTH)."','M',0,0,'' )";
         
         $strsql=iconv("UTF-8","windows-1251",$strsql);
         $result=mssql_query($strsql, $connect);     // выполнение SQL-запроса
@@ -318,10 +320,18 @@ function PoiOut($RequestXml,$ResponseXml)
        $poinode->addChild('DESCRIPTION2', $row['DESCRIPTION2']);
        $poinode->addChild('ADDRESS1', $row['ADDRESS1']);
        $poinode->addChild('ADDRESS2', $row['ADDRESS2']);
-       $poinode->addChild('ADDRESS3', $row['ADDRESS3']);
+       $poinode->addChild('ADDR_STREET', $row['ADDR_STREET']);
+       $poinode->addChild('ADDR_HOUSENUMBER', $row['ADDR_HOUSENUMBER']);
        $poinode->addChild('PHONE', $row['PHONE']);
        $poinode->addChild('WEBSITE', $row['WEBSITE']);
        $poinode->addChild('OPENING_HOURS',$row['OPENING_HOURS'] );
+       
+       //Для обратной совместимости.
+       $addr3=trim($row['ADDR_STREET']);
+       if ($addr3=='') $addr3='<улица не задана>';
+       $addr3=$addr3.', '.$row['ADDR_HOUSENUMBER'];
+       $poinode->addChild('ADDRESS3', $addr3);
+       
     } 
     
   mssql_free_result($result);	
@@ -366,13 +376,15 @@ function PoiIn($UserId, $RequestXml, $ResponseXml)
            ",[NAME]".
            ",[ADDRESS1]".
            ",[ADDRESS2]".
-           ",[ADDRESS3]".
+           ",[ADDR_STREET]".
+           ",[ADDR_HOUSENUMBER]".
            ",[DESCRIPTION1]".
            ",[DESCRIPTION2]".
            ",[OPENING_HOURS]".
            ",[PHONE]".
            ",[WEBSITE]".
-           ",[WIFI_PRESENT])".
+           ",[WIFI_PRESENT]".
+           ",[AVG_BILL])".
      "VALUES".
            "('".$Poi->ID."'".
            ",CURRENT_TIMESTAMP".
@@ -386,13 +398,16 @@ function PoiIn($UserId, $RequestXml, $ResponseXml)
            ",'".sql_str($Poi->NAME)."'".
            ",'".sql_str($Poi->ADDRESS1)."'".
            ",'".sql_str($Poi->ADDRESS2)."'".
-           ",'".sql_str($Poi->ADDRESS3)."'".
+           ",'".sql_str($Poi->ADDR_STREET)."'".
+           ",'".sql_str($Poi->ADDR_HOUSENUMBER)."'".
            ",'".sql_str($Poi->DESCRIPTION1)."'".
            ",'".sql_str($Poi->DESCRIPTION2)."'".
            ",'".sql_str($Poi->OPENING_HOURS)."'".
            ",'".sql_str($Poi->PHONE)."'".
            ",'".sql_str($Poi->WEBSITE)."'".
-           ",0)";
+           ",'".sql_str($Poi->WIFI_PRESENT)."'".
+           ",'".sql_str($Poi->AVG_BILL)."'".
+           ")";
             
       
       $strsql=iconv("UTF-8","windows-1251",$strsql);

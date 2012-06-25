@@ -30,10 +30,17 @@
       echo "    <DESCRIPTION2>".trim($row['DESCRIPTION2'])."</DESCRIPTION2>\n"; 
       echo "    ".XML_node("ADDRESS1", $row['ADDRESS1']); 
       echo "    ".XML_node("ADDRESS2", $row['ADDRESS2']); 
-      echo "    ".XML_node("ADDRESS3", $row['ADDRESS3']); 
+      echo "    ".XML_node("ADDR_STREET", $row['ADDR_STREET']);
+      echo "    ".XML_node("ADDR_HOUSENUMBER", $row['ADDR_HOUSENUMBER']); 
       echo "    ".XML_node("PHONE",$row['PHONE']);
       echo "    ".XML_node("WEBSITE",$row['WEBSITE']); 
       echo "    ".XML_node("OPENING_HOURS",$row['OPENING_HOURS']);
+      
+      //Для обратной совместимости.
+       $addr3=trim($row['ADDR_STREET']);
+       if ($addr3=='') $addr3='<улица не задана>';
+       $addr3=$addr3.', '.$row['ADDR_HOUSENUMBER'];
+       echo "    ".XML_node("ADDRESS3", $addr3); 
       
       echo "  </POI>\n";
     } 
