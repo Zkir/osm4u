@@ -13,6 +13,11 @@ type
     { Private declarations }
   public
     { Public declarations }
+    xmlPoiCategories:IXMLDocument; // Классификатор пои
+    procedure LoadPoiCategories;
+    function GetMpTypeCodeByName(strTypeName:string):string;
+    function GetMpTypeNameByCode(strTypeCode:string):string;
+    function CheckCategoryName(strCategoryName:string):string;
   end;
 
 var
@@ -27,6 +32,23 @@ const ERR_WARNING=1;
 const ERR_BUSINESS_ERROR=2;
 const ERR_INTERNAL_ERROR=3;
 
+//Контекст, указывающий на пользователя и его координаты
+type TContext=class
+  private
+    FLogin:string;
+    FPassword:string;
+    FLat:double;
+    FLon:double;
+    property Password:string read  FPassword;
+  public
+    property Login:string read  FLogin;
+    property CurrentLat:double read  FLat;
+    property CurrentLon:double read  FLon;
+    constructor Create (ALogin, APassword:string);
+    //procedure SetLocation(NewLat,NewLon:double);
+end;
+type TApiContext=TContext;
+
 //Главная функция обмена данными с сервером
 function SendXML(xml:string):string;
 procedure OnBeginQuery;
@@ -40,22 +62,23 @@ function GetGUID():string;
 
 //Операции обмена с сервером
 //Регистрация нового пользователя
-function RegisterNewUser(strLogin,strPassword,strFirstName,strLastName:string;
+function RegisterNewUser(strLogin,strPassword, strFirstName,strLastName:string;
                          dtDateOfBirth:TDateTime;
                          strGender:string):string;
 
 //Проверка подлинности существующего  пользователя
-function CheckUser(strLogin,strPassword:string):string;
+function CheckUser(Context:TContext):string;
 
 //Запрос Пои рамке.
-function GetPoiByBBox(strLogin,strPassword:string;
-                      MinLat,MinLon,MaxLat,MaxLon:double):string;
+function GetPoiByBBox(Context:TContext;
+                      MinLat,MinLon,MaxLat,MaxLon:double;
+                      strCategory,strType:string):string;
 
 //Получение классификатора
-function GetPoiCategories(strLogin,strPassword:string):string;
+function GetPoiCategories(Context:TContext):string;
 
 //сохранение пои в базу
-function SavePoi ( strLogin,strPassword:string;
+function SavePoi ( Context:TContext;
                    strID:string;
                    strMpPoiType:string;// тип пои
                    lat,lon:double;//Координаты
@@ -74,13 +97,21 @@ function SavePoi ( strLogin,strPassword:string;
                    strDescription:string
                    ):string;
 
-function AddComment( strLogin,strPassword:string;
-                   strPoiID:string;
-                   strComment:string;
-                   intRating:integer ):string;
+function AddComment(Context:TContext;
+                    strPoiID:string;
+                    strComment:string;
+                    intRating:integer ):string;
+
+const
+
+   RECOMENDATION_1 = 'К посещению НЕ рекомендуется';
+   RECOMENDATION_2 = 'К посещению не рекомендуется';
+   RECOMENDATION_3 = 'К посещению рекомендуется с оговорками';
+   RECOMENDATION_4 = 'К посещению рекомендуется';
+   RECOMENDATION_5 = 'Посетить обязательно!';
 
 implementation
-uses IdMultipartFormData,EncdDecd;
+uses IdMultipartFormData,EncdDecd,uMain;
 {%CLASSGROUP 'System.Classes.TPersistent'}
 
 {$R *.dfm}
@@ -94,6 +125,24 @@ procedure OnEndQuery;
 begin
   screen.Cursor:=oldCursor;
 end;
+
+//==============================================================================
+//   Контекст исполнения
+//==============================================================================
+constructor TContext.Create (ALogin, APassword:string);
+begin
+  FLogin:= ALogin;
+  FPassword:=APassword;
+
+  //Значение положения по умолчанию.
+  FLat:=  55.716753;
+  FLon:=  37.6189519;
+
+end;
+//==============================================================================
+//   Обмен данными с сервером
+//==============================================================================
+
 //Xml отправляется на сервер методом пост.
 //получается ответный xml
 function SendXML(xml:string):string;
@@ -217,7 +266,7 @@ begin
 end;
 
 //Проверка подлинности существующего  пользователя
-function CheckUser(strLogin,strPassword:string):string;
+function CheckUser(Context:TContext):string;
 var Lines:TStringList;
 begin
   Lines:=TStringList.Create;
@@ -225,15 +274,16 @@ begin
   Lines.Add('<REQUEST operation="UserCheck">');
   Lines.Add('<DTA/>');
   Lines.Add('<CTX>');
-  Lines.Add('  <USER>'+FormatXMLStr(strLogin)+'</USER>');
-  Lines.Add('  <PASSWORD>'+FormatXMLStr(strPassword)+'</PASSWORD>');
+  Lines.Add('  <USER>'+FormatXMLStr(Context.Login)+'</USER>');
+  Lines.Add('  <PASSWORD>'+FormatXMLStr(Context.Password)+'</PASSWORD>');
   Lines.Add('</CTX>');
   Lines.Add('</REQUEST>');
   result:=lines.text;
   Lines.free;
 end;
 
-function GetPoiByBBox(strLogin,strPassword:string;MinLat,MinLon,MaxLat,MaxLon:double):string;
+function GetPoiByBBox(Context:TContext;MinLat,MinLon,MaxLat,MaxLon:double;
+                      strCategory,strType:string):string;
 var Lines:TStringList;
 begin
   Lines:=TStringList.Create;
@@ -244,17 +294,26 @@ begin
   Lines.Add('  <MINLON>'+FormatXMLDbl(MinLon)+'</MINLON>');
   Lines.Add('  <MAXLAT>'+FormatXMLDbl(MaxLat)+'</MAXLAT>');
   Lines.Add('  <MAXLON>'+FormatXMLDbl(MaxLon)+'</MAXLON>');
+  if strCategory<>''  then
+    Lines.Add('  <CATEGORY>'+FormatXMLStr(strCategory)+'</CATEGORY>');
+
+  if strType<>'' then
+    Lines.Add('  <MP_TYPE>'+FormatXMLStr(strType)+'</MP_TYPE>');
+
+
   Lines.Add('</DTA>');
   Lines.Add('<CTX>');
-  Lines.Add('  <USER>'+FormatXMLStr(strLogin)+'</USER>');
-  Lines.Add('  <PASSWORD>'+FormatXMLStr(strPassword)+'</PASSWORD>' );
+  Lines.Add('  <USER>'+FormatXMLStr(Context.Login)+'</USER>');
+  Lines.Add('  <PASSWORD>'+FormatXMLStr(Context.Password)+'</PASSWORD>' );
+  Lines.Add('  <LAT>'+FormatXMLDbl(Context.CurrentLat)+'</LAT>' );
+  Lines.Add('  <LON>'+FormatXMLDbl(Context.CurrentLon)+'</LON>' );
   Lines.Add('</CTX>');
   Lines.Add('</REQUEST>');
   result:=lines.text;
   Lines.free;
 end;
 
-function GetPoiCategories(strLogin,strPassword:string):string;
+function GetPoiCategories(Context:TContext):string;
 var Lines:TStringList;
 begin
   Lines:=TStringList.Create;
@@ -262,15 +321,15 @@ begin
   Lines.Add('<REQUEST operation="CategoryOut">');
   Lines.Add('<DTA/>');
   Lines.Add('<CTX>');
-  Lines.Add('  <USER>'+FormatXMLStr(strLogin)+'</USER>');
-  Lines.Add('  <PASSWORD>'+FormatXMLStr(strPassword)+'</PASSWORD>' );
+  Lines.Add('  <USER>'+FormatXMLStr(Context.Login)+'</USER>');
+  Lines.Add('  <PASSWORD>'+FormatXMLStr(Context.Password)+'</PASSWORD>' );
   Lines.Add('</CTX>');
   Lines.Add('</REQUEST>');
   result:=lines.text;
   Lines.free;
 end;
 
-function SavePoi ( strLogin,strPassword:string;
+function SavePoi ( Context:TContext;
                    strID:string;
                    strMpPoiType:string;// тип пои
                    lat,lon:double;//Координаты
@@ -321,8 +380,8 @@ begin
 
   Lines.Add('</DTA>');
   Lines.Add('<CTX>');
-  Lines.Add('  <USER>'+FormatXMLStr(strLogin)+'</USER>');
-  Lines.Add('  <PASSWORD>'+FormatXMLStr(strPassword)+'</PASSWORD>' );
+  Lines.Add('  <USER>'+FormatXMLStr(Context.Login)+'</USER>');
+  Lines.Add('  <PASSWORD>'+FormatXMLStr(Context.Password)+'</PASSWORD>' );
   Lines.Add('</CTX>');
   Lines.Add('</REQUEST>');
   result:=lines.text;
@@ -330,7 +389,7 @@ begin
 
 end;
 
-function AddComment( strLogin,strPassword:string;
+function AddComment( Context:TContext;
                    strPoiID:string;
                    strComment:string;
                    intRating:integer ):string;
@@ -350,12 +409,76 @@ begin
 
   Lines.Add('</DTA>');
   Lines.Add('<CTX>');
-  Lines.Add('  <USER>'+FormatXMLStr(strLogin)+'</USER>');
-  Lines.Add('  <PASSWORD>'+FormatXMLStr(strPassword)+'</PASSWORD>' );
+  Lines.Add('  <USER>'+FormatXMLStr(Context.Login)+'</USER>');
+  Lines.Add('  <PASSWORD>'+FormatXMLStr(Context.Password)+'</PASSWORD>' );
   Lines.Add('</CTX>');
   Lines.Add('</REQUEST>');
   result:=lines.text;
   Lines.free;
+
+end;
+
+//==============================================================================
+//                   Методы формы
+//==============================================================================
+procedure TfrmWebApi.LoadPoiCategories;
+var strRequestXML,strResponseXML:string;
+begin
+   strRequestXML:=uWebApi.GetPoiCategories(frmMain.ApiContext);
+
+
+  strResponseXML:=uWebApi.SendXML(strRequestXML);
+  xmlPoiCategories:=LoadXMLData(strResponseXML);
+end;
+
+//Нужно получить тип пои (например '0x2C02')  по описанию.
+function TfrmWebApi.GetMpTypeCodeByName(strTypeName:string):string;
+var
+  nodeCategories:IXMLNode;
+  i,j:integer;
+begin
+   result:='';
+   nodeCategories:=xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
+   for i := 0 to nodeCategories.ChildNodes.count-1  do
+     for j := 1 to nodeCategories.ChildNodes[i].ChildNodes.Count-1  do
+       if (nodeCategories.ChildNodes[i].ChildNodes[j].ChildNodes['NAME'].Text=strTypeName) then
+         begin
+           result:=nodeCategories.ChildNodes[i].ChildNodes[j].ChildNodes['MP_TYPE'].Text;
+           exit;
+         end;
+end;
+
+//Нужно получить описание типа по коду.
+function TfrmWebApi.GetMpTypeNameByCode(strTypeCode:string):string;
+var
+  nodeCategories:IXMLNode;
+  i,j:integer;
+begin
+   result:='';
+   nodeCategories:=xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
+   for i := 0 to nodeCategories.ChildNodes.count-1  do
+     for j := 1 to nodeCategories.ChildNodes[i].ChildNodes.Count-1  do
+       if (nodeCategories.ChildNodes[i].ChildNodes[j].ChildNodes['MP_TYPE'].Text=strTypeCode) then
+         begin
+           result:=nodeCategories.ChildNodes[i].ChildNodes[j].ChildNodes['NAME'].Text;
+           exit;
+         end;
+end;
+
+//Проверяет,  является ли данная строка категорией пои
+function TfrmWebApi.CheckCategoryName(strCategoryName:string):string;
+var
+  nodeCategories:IXMLNode;
+  i:integer;
+begin
+   result:='';
+   nodeCategories:=xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
+   for i := 0 to nodeCategories.ChildNodes.count-1  do
+       if (nodeCategories.ChildNodes[i].ChildNodes['NAME'].Text=strCategoryName) then
+         begin
+           result:=strCategoryName;
+           exit;
+         end;
 
 end;
 

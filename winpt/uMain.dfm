@@ -2,8 +2,8 @@ object frmMain: TfrmMain
   Left = 0
   Top = 0
   Caption = 'Osm4u - '#1089#1087#1088#1072#1074#1086#1095#1085#1080#1082' '#1080' '#1088#1077#1076#1072#1082#1090#1086#1088' '#1087#1086#1080' - '#1087#1088#1086#1090#1086#1090#1080#1087
-  ClientHeight = 296
-  ClientWidth = 515
+  ClientHeight = 402
+  ClientWidth = 838
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -12,13 +12,15 @@ object frmMain: TfrmMain
   Font.Style = []
   Menu = MainMenu1
   OldCreateOrder = False
+  OnCreate = FormCreate
+  OnResize = FormResize
   OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object StatusBar1: TStatusBar
     Left = 0
-    Top = 277
-    Width = 515
+    Top = 383
+    Width = 838
     Height = 19
     Panels = <
       item
@@ -27,6 +29,58 @@ object frmMain: TfrmMain
       item
         Width = 50
       end>
+  end
+  object tvClassificator: TTreeView
+    Left = 0
+    Top = 0
+    Width = 249
+    Height = 383
+    Align = alLeft
+    Indent = 19
+    ReadOnly = True
+    TabOrder = 1
+    OnDblClick = tvClassificatorDblClick
+  end
+  object Panel1: TPanel
+    Left = 601
+    Top = 0
+    Width = 237
+    Height = 383
+    Align = alRight
+    TabOrder = 2
+    object mapMiniMap: TStelMap
+      Left = 6
+      Top = 40
+      Width = 219
+      Height = 200
+      Enabled = False
+      Picture.Data = {07544269746D617000000000}
+      ShowSet = False
+      CachePath = '.\Cache\'
+      proxyport = 0
+    end
+    object Label1: TLabel
+      Left = 16
+      Top = 8
+      Width = 32
+      Height = 13
+      Caption = #1071' '#1090#1091#1090':'
+    end
+  end
+  object dgPoiList: TDrawGrid
+    Left = 249
+    Top = 0
+    Width = 352
+    Height = 383
+    Align = alClient
+    ColCount = 1
+    Constraints.MinWidth = 300
+    DefaultRowHeight = 80
+    FixedCols = 0
+    TabOrder = 3
+    OnDrawCell = dgPoiListDrawCell
+    ColWidths = (
+      331)
   end
   object MainMenu1: TMainMenu
     Left = 480

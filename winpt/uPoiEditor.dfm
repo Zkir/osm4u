@@ -25,7 +25,7 @@ object frmPoiEditor: TfrmPoiEditor
     Top = 49
     Width = 509
     Height = 340
-    ActivePage = TabSheet3
+    ActivePage = TabSheet1
     Align = alClient
     Style = tsFlatButtons
     TabOrder = 0
@@ -38,6 +38,7 @@ object frmPoiEditor: TfrmPoiEditor
         Width = 501
         Height = 330
         Align = alClient
+        IncrementalDisplay = True
         Picture.Data = {07544269746D617000000000}
         OnDblClick = StelMap1DblClick
         CachePath = '.\Cache\'

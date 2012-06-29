@@ -13,6 +13,7 @@ object frmLogin: TfrmLogin
   Font.Style = []
   OldCreateOrder = False
   Position = poMainFormCenter
+  OnShow = FormShow
   PixelsPerInch = 96
   TextHeight = 13
   object Label1: TLabel
@@ -68,13 +69,12 @@ object frmLogin: TfrmLogin
     TabOrder = 3
     OnClick = Button2Click
   end
-  object chbRememberMe: TCheckBox
+  object chkRememberMe: TCheckBox
     Left = 16
-    Top = 168
+    Top = 160
     Width = 97
     Height = 17
     Caption = #1047#1072#1087#1086#1084#1085#1080#1090#1100' '#1084#1077#1085#1103
-    Enabled = False
     TabOrder = 4
   end
 end

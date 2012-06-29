@@ -71,14 +71,13 @@ type
     PoiLAT, PoiLON : Double;
     blnMarkerSet:boolean;
     blnNearerPoiLoaded:boolean;
-    xmlPoiCategories:IXMLDocument; // Классификатор пои
+
     Procedure SetStep(intStep:integer);
     Procedure ClearMiniMap;
     Procedure AddMarkerToMiniMap;
     Procedure GetNearerPoiList;
     procedure GetPoiCategories;
-    function GetMpTypeCodeByName(strTypeName:string):string;
-    function GetMpTypeNameByCode(strTypeCode:string):string;
+
     procedure SavePoiToDB;
   public
     { Public declarations }
@@ -92,10 +91,6 @@ var
 
 implementation
 uses uWebApi,uXmlPoster,uMain;
-const
-  FirstLAT = 55.75578;
-  FirstLON = 37.615149;
-
 
 {$R *.dfm}
 
@@ -131,11 +126,11 @@ var strRecomendation:string;
 begin
   strRecomendation:='';
   case cbRating.ItemIndex+1 of
-   1:  strRecomendation:='К посещению НЕ рекомендуется';
-   2:  strRecomendation:='К посещению не рекомендуется';
-   3:  strRecomendation:='К посещению рекомендуется с оговорками';
-   4:  strRecomendation:='К посещению рекомендуется';
-   5:  strRecomendation:='Посетить обязательно!';
+   1:  strRecomendation:=RECOMENDATION_1;//'К посещению НЕ рекомендуется';
+   2:  strRecomendation:=RECOMENDATION_2;//'К посещению не рекомендуется';
+   3:  strRecomendation:=RECOMENDATION_3;//'К посещению рекомендуется с оговорками';
+   4:  strRecomendation:=RECOMENDATION_4;//'К посещению рекомендуется';
+   5:  strRecomendation:=RECOMENDATION_5;//'Посетить обязательно!';
    else
      strRecomendation:='Ваша рекомендация?';
   end;
@@ -144,8 +139,8 @@ end;
 
 procedure TfrmPoiEditor.FormCreate(Sender: TObject);
 begin
-  StelMap1.LAT := FirstLAT;
-  StelMap1.LON := FirstLON;
+  StelMap1.LAT := 0;
+  StelMap1.LON := 0;
   StelMap1.Zoom := 16;
 
   StelMap1.AddLayer;
@@ -265,12 +260,12 @@ var
   i:integer;
 begin
   strRequestXML:=uWebApi.GetPoiByBBox (
-                          frmMain.UserLogin,
-                          frmMain.UserPassword,
+                          frmMain.ApiContext,
                           CurrentLat-0.001,
                           CurrentLon-(0.001)/cos(CurrentLat/180*Pi),
                           CurrentLat+0.001,
-                          CurrentLon+0.001/cos(CurrentLat/180*Pi));
+                          CurrentLon+0.001/cos(CurrentLat/180*Pi),
+                          '','');
 
   frmPoster.Memo1.Lines.Text:=strRequestXML;
 
@@ -283,7 +278,7 @@ begin
 
   for i := 0 to nodePOIs.ChildNodes.count-1  do
   begin
-    sgExistingPoi.cells[0,i]:=GetMpTypeNameByCode(nodePOIs.ChildNodes[i].ChildNodes['MP_TYPE'].Text);
+    sgExistingPoi.cells[0,i]:=frmWebApi.GetMpTypeNameByCode(nodePOIs.ChildNodes[i].ChildNodes['MP_TYPE'].Text);
     //if not nodePOIs.ChildNodes[i].ChildNodes['NAME'].t then
 
     sgExistingPoi.cells[1,i]:=nodePOIs.ChildNodes[i].ChildNodes['NAME'].Text;
@@ -298,20 +293,12 @@ end;
 
 procedure TfrmPoiEditor.GetPoiCategories;
 var
-  strRequestXML,strResponseXML:string;
+
   nodeCategories:IXMLNode;
   i:integer;
 begin
-  strRequestXML:=uWebApi.GetPoiCategories (
-                          frmMain.UserLogin,
-                          frmMain.UserPassword);
 
-  frmPoster.Memo1.Lines.Text:=strRequestXML;
-
-  strResponseXML:=uWebApi.SendXML(strRequestXML);
-  xmlPoiCategories:=LoadXMLData(strResponseXML);
-
-  nodeCategories:=xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
+  nodeCategories:=frmWebApi.xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
   cbPoiCategory.Items.Clear;
   cbPoiCategory.Items.Add('(выберите категорию)');
 
@@ -335,7 +322,7 @@ begin
   begin
     strCategoryName:=cbPoiCategory.Text;
     //Тут нужно выбирать дочерние типы
-     nodeCategories:=xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
+     nodeCategories:=frmWebApi.xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
      for i := 0 to nodeCategories.ChildNodes.count-1  do
        if (nodeCategories.ChildNodes[i].ChildNodes['NAME'].Text=strCategoryName) then
        begin
@@ -411,6 +398,8 @@ end;
 
 procedure TfrmPoiEditor.ShowToMakeNewPoi;
 begin
+  StelMap1.LAT:=frmMain.ApiContext.CurrentLat;
+  StelMap1.LON:=frmMain.ApiContext.CurrentLon;
   //Нужно все почистить
   //1-й и 2-й скрин
   ClearMiniMap;
@@ -444,39 +433,7 @@ begin
   ShowModal;
 end;
 
-//Нужно получить тип пои (например '0x2C02')  по описанию.
-function TfrmPoiEditor.GetMpTypeCodeByName(strTypeName:string):string;
-var
-  nodeCategories:IXMLNode;
-  i,j:integer;
-begin
 
-   nodeCategories:=xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
-   for i := 0 to nodeCategories.ChildNodes.count-1  do
-     for j := 1 to nodeCategories.ChildNodes[i].ChildNodes.Count-1  do
-       if (nodeCategories.ChildNodes[i].ChildNodes[j].ChildNodes['NAME'].Text=strTypeName) then
-         begin
-           result:=nodeCategories.ChildNodes[i].ChildNodes[j].ChildNodes['MP_TYPE'].Text;
-           exit;
-         end;
-end;
-
-//Нужно получить тип пои (например '0x2C02')  по описанию.
-function TfrmPoiEditor.GetMpTypeNameByCode(strTypeCode:string):string;
-var
-  nodeCategories:IXMLNode;
-  i,j:integer;
-begin
-
-   nodeCategories:=xmlPoiCategories.DocumentElement.ChildNodes['DTA'];
-   for i := 0 to nodeCategories.ChildNodes.count-1  do
-     for j := 1 to nodeCategories.ChildNodes[i].ChildNodes.Count-1  do
-       if (nodeCategories.ChildNodes[i].ChildNodes[j].ChildNodes['MP_TYPE'].Text=strTypeCode) then
-         begin
-           result:=nodeCategories.ChildNodes[i].ChildNodes[j].ChildNodes['NAME'].Text;
-           exit;
-         end;
-end;
 
 
 //Отправка Пои на сервер.
@@ -491,12 +448,11 @@ begin
   strPoiGuid:= uWebApi.GetGuid();
   //Вызываем API -  добавление пои
   strRequestXML:=uWebApi.SavePoi (
-                          frmMain.UserLogin,
-                          frmMain.UserPassword,
+                          frmMain.ApiContext,
                           //Гуид (новый для нового пои)
                           strPoiGuid,
                           //Тип
-                          GetMpTypeCodeByName(cbPoiType.Text),
+                          frmWebApi.GetMpTypeCodeByName(cbPoiType.Text),
                           // (координата)
                           PoiLat,PoiLon,
                           edPOIName.text, //Название
@@ -522,8 +478,7 @@ begin
 
   //Вызываем API -  добавление оценки, для нового пои, это отдельная операция
   strRequestXML:=uWebApi.AddComment  (
-                          frmMain.UserLogin,
-                          frmMain.UserPassword,
+                          frmMain.ApiContext,
                           //Гуид (новый для нового пои)
                           strPoiGuid,
                           //Тип

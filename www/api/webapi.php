@@ -296,10 +296,33 @@ function PoiOut($RequestXml,$ResponseXml)
 {
   global $gOsm4u_connect;
   
+  $UserLat=(float)$RequestXml->CTX->LAT;
+  $UserLon=(float)$RequestXml->CTX->LON;
+  $Mp_Type=$RequestXml->DTA->MP_TYPE;
+  $Category=$RequestXml->DTA->CATEGORY;
+  	  
  // $strsql="SELECT * FROM POI WHERE MP_TYPE='0xF102'";    // строка с SQL-запросом
-  $strsql="SELECT TOP 200 * FROM POI WHERE LAT>".$RequestXml->DTA->MINLAT." AND LAT<".$RequestXml->DTA->MAXLAT." AND LON>".$RequestXml->DTA->MINLON." AND LON<".$RequestXml->DTA->MAXLON." ";
+  $strsql="SELECT TOP 200 POI.*, RATINGS.RATING, RATINGS.GRADE_COUNT ".
+  	       "FROM POI left join RATINGS on POI.ID=RATINGS.POI_ID ";
+  
+  
+ 
+  
+  $strWhereClause= "WHERE ".
+                   "(LAT>".$RequestXml->DTA->MINLAT." AND LAT<".$RequestXml->DTA->MAXLAT." AND LON>".$RequestXml->DTA->MINLON." AND LON<".$RequestXml->DTA->MAXLON.")";
+  
+  if($Mp_Type!='') 
+    $strWhereClause=$strWhereClause." AND (MP_TYPE ='".sql_str($Mp_Type)."') ";
+ 
+  if($Category!='') 
+    $strWhereClause=$strWhereClause."AND (MP_TYPE in (select MP_TYPE from POI_CATEGORIES where CATEGORY='".sql_str($Category)."' ) )";
+           
+  
+  $strOrderByClause="ORDER BY SQUARE (LAT-$UserLat)+SQUARE (cos(LAT/180*3.14)* (LON-$UserLon)) asc";
+  
+  $strsql=$strsql." ".$strWhereClause." ".$strOrderByClause;
   //echo $strsql;
-    
+  $strsql=iconv("UTF-8","windows-1251",$strsql);
   
   $result=mssql_query($strsql, $gOsm4u_connect);     // выполнение SQL-запроса
 
@@ -310,7 +333,9 @@ function PoiOut($RequestXml,$ResponseXml)
     	
        $poinode=$ResponseXml->DTA->addChild('POI');
        
-       $poinode->addChild('NAME', $row['NAME']);
+       //$poinode->addChild('NAME', $row['NAME']);
+       $poinode->NAME=$row['NAME'];
+       
        $poinode->addChild('OSM_ID',$row['OSM_ID'] );
        $poinode->addChild('MP_TYPE',$row['MP_TYPE'] );
        $coordnode=$poinode->addChild('COORD');
@@ -331,6 +356,17 @@ function PoiOut($RequestXml,$ResponseXml)
        if ($addr3=='') $addr3='<улица не задана>';
        $addr3=$addr3.', '.$row['ADDR_HOUSENUMBER'];
        $poinode->addChild('ADDRESS3', $addr3);
+       
+       //Еще нужно выдать рейтинг места,
+       //и число комментариев.
+       
+       $poinode->RATING=$row['RATING'];
+       if ($row['GRADE_COUNT']!='') 
+         $poinode->NUMBER_OF_RATINGS=$row['GRADE_COUNT'];
+       else
+       	 $poinode->NUMBER_OF_RATINGS=0;
+       $poinode->NUMBER_OF_COMMENTS=0;
+       
        
     } 
     
